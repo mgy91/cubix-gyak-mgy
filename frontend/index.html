@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="hu" ng-app="cubixApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Cubix DevOps - Angular & JSON Server</title>
+    <script src="https://googleapis.com"></script>
+    <script src="app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 40px auto; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        li { padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .badge { background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body ng-controller="TaskController">
+    <div class="card">
+        <h2>🚀 Cubix DevOps Feladatkezelő</h2>
+        <p>Adatok betöltve a <strong>JSON Server API</strong>-ból:</p>
+        <ul>
+            <li ng-repeat="task in tasks">
+                <span>{{ task.title }}</span>
+                <span class="badge">{{ task.status }}</span>
+            </li>
+        </ul>
+        <div style="margin-top: 20px;">
+            <input type="text" ng-model="newTask" placeholder="Új DevOps feladat..." style="padding: 8px; width: 70%;">
+            <button ng-click="addTask()" style="padding: 8px 15px; background: #007bff; color: white; border: none; cursor: pointer;">Hozzáad</button>
+        </div>
+    </div>
+</body>
+</html>
