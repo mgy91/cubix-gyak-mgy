@@ -17,6 +17,18 @@ services:
     networks:
       - app-network
 
+  optional-app:
+    build:
+      context: ./optional-app
+      dockerfile: Dockerfile
+      args:
+        - VERSION=2.5.0-cubix-optional
+    container_name: cubix-optional-node
+    ports:
+      - "4000:4000"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
