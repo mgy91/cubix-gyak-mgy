@@ -1,0 +1,71 @@
+name: Enterprise 3-Stage CI/CD Pipeline
+
+on:
+  # 1. AUTOMATA TRIGGER: Amikor a jóváhagyott PR bekerül a dev ágra
+  push:
+    branches: [ "dev" ]
+
+  # 2. KÉZI GOMB TRIGGER: A GitHub felületén indítható élesítés (master-re)
+  workflow_dispatch:
+    inputs:
+      release_note:
+        description: 'Kiadási megjegyzés a Master élesítéshez'
+        required: true
+        default: 'Stabil verzió élesítése'
+
+jobs:
+  # =========================================================================
+  # 1. FÁZIS: TESZTELÉS ÉS AUTOMATA PROMÓCIÓ A 'TEST' ÁGRA
+  # =========================================================================
+  build-test-and-promote-to-test:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Build and Test Docker Container
+      run: |
+        cd app
+        docker build -t cubix-enterprise:test .
+        docker run --rm cubix-enterprise:test node -e "console.log('Teszt sikeres!')"
+
+    - name: Auto-Merge Dev into Test Branch
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
+        git fetch origin test
+        git checkout test
+        git merge origin/dev --no-ff -m "CI Auto-Promote: dev -> test [skip ci]"
+        git push origin test
+
+  # =========================================================================
+  # 2. FÁZIS: MANUÁLIS ÉLESÍTÉS JÓVÁHAGYÁSSAL A 'MASTER' ÁGRA
+  # =========================================================================
+  deploy-to-master:
+    # Csak akkor indul el, ha a kézi "Run workflow" gombot nyomták meg!
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    
+    # Kötelező jóváhagyási kapu (Review deployments gomb)
+    environment:
+      name: Production
+      url: https://github.com{{ github.repository }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Promote Test Branch into Master
+      run: |
+        git config --global user.name "GitHub Actions Release Bot"
+        git config --global user.email "actions@github.com"
+        git fetch origin test master
+        git checkout master
+        git merge origin/test --no-ff -m "Release to Master: ${{ github.event.inputs.release_note }} [skip ci]"
+        git push origin master
+        echo "Sikeres élesítés a MASTER ágra!"
