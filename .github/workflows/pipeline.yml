@@ -26,11 +26,27 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Build and Test Docker Container
+    - name: Build and Test All Docker Containers
       run: |
+        # 1. Alap app tesztje
         cd app
         docker build -t cubix-enterprise:test .
-        docker run --rm cubix-enterprise:test node -e "console.log('Teszt sikeres!')"
+        docker run --rm cubix-enterprise:test node -e "console.log('Alap app teszt sikeres!')"
+        cd ..
+
+        # 2. Cubix szorgalmi feladat tesztje (ARG + Multi-stage + Non-root user)
+        cd optional-app
+        docker build --build-arg VERSION=ci-verified-1.0 -t cubix-optional:test .
+        docker run --rm cubix-optional:test sh -c "whoami | grep -q '^node$' && echo 'Biztonságos node user OK!'"
+        cd ..
+
+        # 3. Teljes rendszer (Frontend + Backend + Szorgalmi) Compose tesztje
+        docker compose build
+        docker compose up -d
+        sleep 5
+        curl -f http://localhost:8080 || exit 1
+        curl -f http://localhost:4000 || exit 1
+        docker compose down
 
     - name: Auto-Merge Dev into Test Branch
       run: |
